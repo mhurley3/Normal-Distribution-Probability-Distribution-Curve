@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Normal Distribution Visualizer | Introductory Statistics</title>
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --text-muted: #475569;
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --focus-ring: #2563eb;
+            --border-color: #cbd5e1;
+            --error-color: #dc2626;
+            --success-bg: #f0fdf4;
+            --curve-color: #0284c7;
+            --shade-color: rgba(2, 132, 199, 0.25);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #0f172a;
+                --card-bg: #1e293b;
+                --text-color: #f1f5f9;
+                --text-muted: #94a3b8;
+                --primary: #38bdf8;
+                --primary-hover: #7dd3fc;
+                --focus-ring: #60a5fa;
+                --border-color: #475569;
+                --error-color: #f87171;
+                --success-bg: #064e3b;
+                --curve-color: #38bdf8;
+                --shade-color: rgba(56, 189, 248, 0.3);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 1.5rem;
+        }
+
+        header {
+            max-width: 900px;
+            margin: 0 auto 2rem auto;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: clamp(1.75rem, 3vw, 2.5rem);
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        p.subtitle {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+        }
+
+        main {
+            max-width: 900px;
+            margin: 0 auto;
+            display: grid;
+            gap: 2rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            font-size: 1.35rem;
+            margin-bottom: 1rem;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        label {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--primary);
+            height: 8px;
+            cursor: pointer;
+        }
+
+        input[type="number"] {
+            width: 90px;
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--card-bg);
+            color: var(--text-color);
+            text-align: center;
+        }
+
+        select {
+            padding: 0.5rem;
+            font-size: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        /* Focus indicators for accessibility */
+        input:focus, select:focus, button:focus {
+            outline: 3px solid var(--focus-ring);
+            outline-offset: 2px;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.85rem;
+            font-weight: 600;
+            min-height: 1.2rem;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            max-height: 400px;
+        }
+
+        .results-panel {
+            background-color: var(--bg-color);
+            border-left: 5px solid var(--primary);
+            padding: 1.25rem;
+            border-radius: 0 8px 8px 0;
+            margin-top: 1.5rem;
+        }
+
+        .results-panel h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        .instructions-list {
+            margin-left: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        footer {
+            max-width: 900px;
+            margin: 2rem auto 0 auto;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Normal Distribution Explorer</h1>
+        <p class="subtitle">Introductory Statistics Interactive Learning Tool</p>
+    </header>
+
+    <main>
+        <!-- Instructions Section -->
+        <section class="card" aria-labelledby="instructions-heading">
+            <h2 id="instructions-heading">Instructions & Learning Guide</h2>
+            <ol class="instructions-list">
+                <li>Adjust the <strong>Mean ($\mu$)</strong> to shift the center of the bell curve left or right.</li>
+                <li>Adjust the <strong>Standard Deviation ($\sigma$)</strong> to make the distribution narrower (more clustered) or wider (more spread out).</li>
+                <li>Select a probability region type (e.g., Less Than $X$) and change the boundary value(s) to calculate cumulative probabilities and visualize shaded areas under the curve.</li>
+            </ol>
+        </section>
+
+        <!-- Interactive Controls & Canvas Section -->
+        <section class="card" aria-labelledby="visualizer-heading">
+            <h2 id="visualizer-heading">Distribution Parameters & Visualizer</h2>
+            
+            <div class="controls-grid">
+                <!-- Mean Control -->
+                <div class="control-group">
+                    <label for="mean-input">Mean ($\mu$):</label>
+                    <div class="input-row">
+                        <input type="range" id="mean-range" min="-50" max="50" step="0.5" value="0" aria-label="Mean slider">
+                        <input type="number" id="mean-input" value="0" min="-1000" max="1000" step="0.1" aria-describedby="mean-error">
+                    </div>
+                    <div id="mean-error" class="error-message" role="alert"></div>
+                </div>
+
+                <!-- Standard Deviation Control -->
+                <div class="control-group">
+                    <label for="sd-input">Standard Deviation ($\sigma$):</label>
+                    <div class="input-row">
+                        <input type="range" id="sd-range" min="0.1" max="25" step="0.1" value="5" aria-label="Standard deviation slider">
+                        <input type="number" id="sd-input" value="5" min="0.001" max="1000" step="0.1" aria-describedby="sd-error">
+                    </div>
+                    <div id="sd-error" class="error-message" role="alert"></div>
+                </div>
+            </div>
+
+            <!-- Probability Region Controls -->
+            <div class="controls-grid" style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1.5rem;">
+                <div class="control-group">
+                    <label for="calc-mode">Probability Region:</label>
+                    <select id="calc-mode">
+                        <option value="less">P(X &le; a)</option>
+                        <option value="greater">P(X &ge; a)</option>
+                        <option value="between">P(a &le; X &le; b)</option>
+                    </select>
+                </div>
+
+                <div class="control-group" id="group-val-a">
+                    <label for="val-a">Boundary Value ($a$):</label>
+                    <div class="input-row">
+                        <input type="number" id="val-a" value="2" step="0.1">
+                    </div>
+                    <div id="val-a-error" class="error-message" role="alert"></div>
+                </div>
+
+                <div class="control-group" id="group-val-b" style="display: none;">
+                    <label for="val-b">Upper Boundary ($b$):</label>
+                    <div class="input-row">
+                        <input type="number" id="val-b" value="8" step="0.1">
+                    </div>
+                    <div id="val-b-error" class="error-message" role="alert"></div>
+                </div>
+            </div>
+
+            <!-- Canvas Display -->
+            <div class="canvas-container" style="margin-top: 1.5rem;">
+                <canvas id="distCanvas" width="800" height="400" aria-label="Normal distribution graph showing the bell curve and shaded probability regions.">
+                    Your browser does not support HTML5 Canvas. Please update your browser to view this interactive graph.
+                </canvas>
+            </div>
+
+            <!-- Results Output -->
+            <div class="results-panel" aria-live="polite">
+                <h3>Calculation Results</h3>
+                <p id="result-text">Probability: P = 0.5000</p>
+                <p id="z-score-text" style="font-size: 0.95rem; color: var(--text-muted); margin-top: 0.25rem;"></p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Screen Reader Live Region Announcement -->
+    <div id="sr-announcements" class="sr-only" aria-live="assertive"></div>
+
+    <footer>
+        <p>Designed for Introductory Statistics &bull; WCAG 2.2 AA Compliant Static Application</p>
+    </footer>
+
+    <script>
+        // DOM Elements
+        const meanRange = document.getElementById('mean-range');
+        const meanInput = document.getElementById('mean-input');
+        const meanError = document.getElementById('mean-error');
+
+        const sdRange = document.getElementById('sd-range');
+        const sdInput = document.getElementById('sd-input');
+        const sdError = document.getElementById('sd-error');
+
+        const calcMode = document.getElementById('calc-mode');
+        const groupValA = document.getElementById('group-val-a');
+        const groupValB = document.getElementById('group-val-b');
+        const valAInput = document.getElementById('val-a');
+        const valAError = document.getElementById('val-a-error');
+        const valBInput = document.getElementById('val-b');
+        const valBError = document.getElementById('val-b-error');
+
+        const canvas = document.getElementById('distCanvas');
+        const ctx = canvas.getContext('2d');
+        const resultText = document.getElementById('result-text');
+        const zScoreText = document.getElementById('z-score-text');
+        const srAnnouncements = document.getElementById('sr-announcements');
+
+        // Mathematical Helper Functions
+        function erf(x) {
+            // Abramowitz and Stegun approximation for error function
+            const a1 = 0.254829592;
+            const a2 = -0.284496736;
+            const a3 = 1.421413741;
+            const a4 = -1.453152027;
+            const a5 = 1.061405429;
+            const p = 0.3275911;
+
+            let sign = (x < 0) ? -1 : 1;
+            x = Math.abs(x);
+
+            let t = 1.0 / (1.0 + p * x);
+            let y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+            return sign * y;
+        }
+
+        function normalCDF(x, mean, stdDev) {
+            return 0.5 * (1 + erf((x - mean) / (stdDev * Math.sqrt(2))));
+        }
+
+        function normalPDF(x, mean, stdDev) {
+            let variance = stdDev * stdDev;
+            return (1 / (stdDev * Math.sqrt(2 * Math.PI))) * Math.exp(-Math.pow(x - mean, 2) / (2 * variance));
+        }
+
+        // State validation and retrieval
+        function getState() {
+            let mean = parseFloat(meanInput.value);
+            let sd = parseFloat(sdInput.value);
+            let a = parseFloat(valAInput.value);
+            let b = parseFloat(valBInput.value);
+            let mode = calcMode.value;
+
+            return { mean, sd, a, b, mode };
+        }
+
+        function validateInputs() {
+            let isValid = true;
+            let state = getState();
+
+            // Validate Mean
+            if (isNaN(state.mean)) {
+                meanError.textContent = "Please enter a valid number for the mean.";
+                isValid = false;
+            } else {
+                meanError.textContent = "";
+            }
+
+            // Validate Standard Deviation
+            if (isNaN(state.sd) || state.sd <= 0) {
+                sdError.textContent = "Standard deviation must be greater than 0.";
+                isValid = false;
+            } else {
+                sdError.textContent = "";
+            }
+
+            // Validate Boundary A
+            if (isNaN(state.a)) {
+                valAError.textContent = "Please enter a valid number for boundary a.";
+                isValid = false;
+            } else {
+                valAError.textContent = "";
+            }
+
+            // Validate Boundary B (if in between mode)
+            if (state.mode === 'between') {
+                if (isNaN(state.b)) {
+                    valBError.textContent = "Please enter a valid number for upper boundary b.";
+                    isValid = false;
+                } else if (state.b <= state.a) {
+                    valBError.textContent = "Upper boundary b must be greater than boundary a.";
+                    isValid = false;
+                } else {
+                    valBError.textContent = "";
+                }
+            } else {
+                valBError.textContent = "";
+            }
+
+            return isValid;
+        }
+
+        // Draw distribution curve and shaded region
+        function drawChart() {
+            if (!validateInputs()) return;
+
+            let { mean, sd, a, b, mode } = getState();
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Canvas dimensions
+            let width = canvas.width;
+            let height = canvas.height;
+            let padding = 40;
+
+            // X-axis bounds (mean +/- 4 standard deviations)
+            let xMin = mean - 4 * sd;
+            let xMax = mean + 4 * sd;
+
+            // Peak PDF value at mean
+            let peakY = normalPDF(mean, mean, sd);
+            let yMax = peakY * 1.15; // padding top
+
+            function scaleX(x) {
+                return padding + ((x - xMin) / (xMax - xMin)) * (width - 2 * padding);
+            }
+
+            function scaleY(y) {
+                return height - padding - (y / yMax) * (height - 2 * padding);
+            }
+
+            // Draw shaded region under the curve
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--shade-color').trim() || 'rgba(2, 132, 199, 0.25)';
+            ctx.beginPath();
+            
+            let shadeStartX = xMin;
+            let shadeEndX = xMax;
+
+            if (mode === 'less') {
+                shadeStartX = xMin;
+                shadeEndX = a;
+            } else if (mode === 'greater') {
+                shadeStartX = a;
+                shadeEndX = xMax;
+            } else if (mode === 'between') {
+                shadeStartX = a;
+                shadeEndX = b;
+            }
+
+            // Trace shaded path
+            ctx.moveTo(scaleX(Math.max(xMin, shadeStartX)), height - padding);
+            for (let x = Math.max(xMin, shadeStartX); x <= Math.min(xMax, shadeEndX); x += (xMax - xMin) / 300) {
+                ctx.lineTo(scaleX(x), scaleY(normalPDF(x, mean, sd)));
+            }
+            ctx.lineTo(scaleX(Math.min(xMax, shadeEndX)), height - padding);
+            ctx.closePath();
+            ctx.fill();
+
+            // Draw Bell Curve Line
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--curve-color').trim() || '#0284c7';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            let first = true;
+            for (let x = xMin; x <= xMax; x += (xMax - xMin) / 300) {
+                let px = scaleX(x);
+                let py = scaleY(normalPDF(x, mean, sd));
+                if (first) {
+                    ctx.moveTo(px, py);
+                    first = false;
+                } else {
+                    ctx.lineTo(px, py);
+                }
+            }
+            ctx.stroke();
+
+            // Draw Axes
+            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim() || '#cbd5e1';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            // X-axis
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            // Y-axis
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.stroke();
+
+            // Draw Axis Labels & Ticks
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim() || '#1e293b';
+            ctx.font = '14px system-ui, sans-serif';
+            ctx.textAlign = 'center';
+
+            // Tick marks at mean, mean +/- sd, mean +/- 2sd
+            for (let i = -3; i <= 3; i++) {
+                let val = mean + i * sd;
+                if (val >= xMin && val <= xMax) {
+                    let px = scaleX(val);
+                    ctx.beginPath();
+                    ctx.moveTo(px, height - padding);
+                    ctx.lineTo(px, height - padding + 6);
+                    ctx.stroke();
+                    ctx.fillText(val.toFixed(1), px, height - padding + 22);
+                }
+            }
+
+            // Calculate probabilities
+            let prob = 0;
+            let zText = "";
+            if (mode === 'less') {
+                prob = normalCDF(a, mean, sd);
+                let z = (a - mean) / sd;
+                zText = `Z-score for a = ${a}: ${z.toFixed(2)}`;
+            } else if (mode === 'greater') {
+                prob = 1 - normalCDF(a, mean, sd);
+                let z = (a - mean) / sd;
+                zText = `Z-score for a = ${a}: ${z.toFixed(2)}`;
+            } else if (mode === 'between') {
+                prob = normalCDF(b, mean, sd) - normalCDF(a, mean, sd);
+                let za = (a - mean) / sd;
+                let zb = (b - mean) / sd;
+                zText = `Z-scores: a = ${a} (z = ${za.toFixed(2)}), b = ${b} (z = ${zb.toFixed(2)})`;
+            }
+
+            resultText.textContent = `Probability: P = ${prob.toFixed(4)} (${(prob * 100).toFixed(2)}%)`;
+            zScoreText.textContent = zText;
+        }
+
+        // Event Listeners & Syncing Sliders with Inputs
+        meanRange.addEventListener('input', () => {
+            meanInput.value = meanRange.value;
+            drawChart();
+        });
+
+        meanInput.addEventListener('input', () => {
+            if (!isNaN(meanInput.value)) {
+                meanRange.value = meanInput.value;
+            }
+            drawChart();
+        });
+
+        sdRange.addEventListener('input', () => {
+            sdInput.value = sdRange.value;
+            drawChart();
+        });
+
+        sdInput.addEventListener('input', () => {
+            if (!isNaN(sdInput.value) && parseFloat(sdInput.value) > 0) {
+                sdRange.value = sdInput.value;
+            }
+            drawChart();
+        });
+
+        calcMode.addEventListener('change', () => {
+            if (calcMode.value === 'between') {
+                groupValB.style.display = 'flex';
+            } else {
+                groupValB.style.display = 'none';
+            }
+            drawChart();
+        });
+
+        valAInput.addEventListener('input', drawChart);
+        valBInput.addEventListener('input', drawChart);
+
+        // Initial render
+        drawChart();
+    </script>
+</body>
+</html>

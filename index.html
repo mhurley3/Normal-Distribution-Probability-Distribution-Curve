@@ -223,8 +223,8 @@
         <section class="card" aria-labelledby="instructions-heading">
             <h2 id="instructions-heading">Instructions & Learning Guide</h2>
             <ol class="instructions-list">
-                <li>Adjust the <strong>Mean (µ)</strong> to shift the center of the bell curve left or right.</li>
-                <li>Adjust the <strong>Standard Deviation (σ)</strong> to make the distribution narrower or wider.</li>
+                <li>Adjust the Mean (mu) to shift the center of the bell curve left or right.</li>
+                <li>Adjust the Standard Deviation (sigma) to make the distribution narrower or wider.</li>
                 <li>Select a probability region type (e.g., Less Than or Equal to X) and change the boundary value(s) to calculate cumulative probabilities and visualize shaded areas.</li>
             </ol>
         </section>
@@ -236,7 +236,7 @@
             <div class="controls-grid">
                 <!-- Mean Control -->
                 <div class="control-group">
-                    <label for="mean-input">Mean (µ):</label>
+                    <label for="mean-input">Mean (mu):</label>
                     <div class="input-row">
                         <input type="range" id="mean-range" min="-50" max="50" step="0.5" value="0" aria-label="Mean slider">
                         <input type="number" id="mean-input" value="0" min="-1000" max="1000" step="0.1" aria-describedby="mean-error">
@@ -246,7 +246,7 @@
 
                 <!-- Standard Deviation Control -->
                 <div class="control-group">
-                    <label for="sd-input">Standard Deviation (σ):</label>
+                    <label for="sd-input">Standard Deviation (sigma):</label>
                     <div class="input-row">
                         <input type="range" id="sd-range" min="0.1" max="25" step="0.1" value="5" aria-label="Standard deviation slider">
                         <input type="number" id="sd-input" value="5" min="0.001" max="1000" step="0.1" aria-describedby="sd-error">
@@ -260,9 +260,9 @@
                 <div class="control-group">
                     <label for="calc-mode">Probability Region:</label>
                     <select id="calc-mode">
-                        <option value="less">P(X ≤ a)</option>
-                        <option value="greater">P(X ≥ a)</option>
-                        <option value="between">P(a ≤ X ≤ b)</option>
+                        <option value="less">P(X &le; a)</option>
+                        <option value="greater">P(X &ge; a)</option>
+                        <option value="between">P(a &le; X &le; b)</option>
                     </select>
                 </div>
 
@@ -356,204 +356,4 @@
         function getState() {
             let mean = parseFloat(meanInput.value);
             let sd = parseFloat(sdInput.value);
-            let a = parseFloat(valAInput.value);
-            let b = parseFloat(valBInput.value);
-            let mode = calcMode.value;
-
-            return { mean, sd, a, b, mode };
-        }
-
-        function validateInputs() {
-            let isValid = true;
-            let state = getState();
-
-            if (isNaN(state.mean)) {
-                meanError.textContent = "Please enter a valid number for the mean.";
-                isValid = false;
-            } else {
-                meanError.textContent = "";
-            }
-
-            if (isNaN(state.sd) || state.sd <= 0) {
-                sdError.textContent = "Standard deviation must be greater than 0.";
-                isValid = false;
-            } else {
-                sdError.textContent = "";
-            }
-
-            if (isNaN(state.a)) {
-                valAError.textContent = "Please enter a valid number for boundary a.";
-                isValid = false;
-            } else {
-                valAError.textContent = "";
-            }
-
-            if (state.mode === 'between') {
-                if (isNaN(state.b)) {
-                    valBError.textContent = "Please enter a valid number for upper boundary b.";
-                    isValid = false;
-                } else if (state.b <= state.a) {
-                    valBError.textContent = "Upper boundary b must be greater than boundary a.";
-                    isValid = false;
-                } else {
-                    valBError.textContent = "";
-                }
-            } else {
-                valBError.textContent = "";
-            }
-
-            return isValid;
-        }
-
-        function drawChart() {
-            if (!validateInputs()) return;
-
-            let { mean, sd, a, b, mode } = getState();
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            let width = canvas.width;
-            let height = canvas.height;
-            let padding = 40;
-
-            let xMin = mean - 4 * sd;
-            let xMax = mean + 4 * sd;
-
-            let peakY = normalPDF(mean, mean, sd);
-            let yMax = peakY * 1.15;
-
-            function scaleX(x) {
-                return padding + ((x - xMin) / (xMax - xMin)) * (width - 2 * padding);
-            }
-
-            function scaleY(y) {
-                return height - padding - (y / yMax) * (height - 2 * padding);
-            }
-
-            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--shade-color').trim() || 'rgba(2, 132, 199, 0.25)';
-            ctx.beginPath();
-            
-            let shadeStartX = xMin;
-            let shadeEndX = xMax;
-
-            if (mode === 'less') {
-                shadeStartX = xMin;
-                shadeEndX = a;
-            } else if (mode === 'greater') {
-                shadeStartX = a;
-                shadeEndX = xMax;
-            } else if (mode === 'between') {
-                shadeStartX = a;
-                shadeEndX = b;
-            }
-
-            ctx.moveTo(scaleX(Math.max(xMin, shadeStartX)), height - padding);
-            for (let x = Math.max(xMin, shadeStartX); x <= Math.min(xMax, shadeEndX); x += (xMax - xMin) / 300) {
-                ctx.lineTo(scaleX(x), scaleY(normalPDF(x, mean, sd)));
-            }
-            ctx.lineTo(scaleX(Math.min(xMax, shadeEndX)), height - padding);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--curve-color').trim() || '#0284c7';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            let first = true;
-            for (let x = xMin; x <= xMax; x += (xMax - xMin) / 300) {
-                let px = scaleX(x);
-                let py = scaleY(normalPDF(x, mean, sd));
-                if (first) {
-                    ctx.moveTo(px, py);
-                    first = false;
-                } else {
-                    ctx.lineTo(px, py);
-                }
-            }
-            ctx.stroke();
-
-            ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim() || '#cbd5e1';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.moveTo(padding, height - padding);
-            ctx.lineTo(width - padding, height - padding);
-            ctx.moveTo(padding, padding);
-            ctx.lineTo(padding, height - padding);
-            ctx.stroke();
-
-            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim() || '#1e293b';
-            ctx.font = '14px system-ui, sans-serif';
-            ctx.textAlign = 'center';
-
-            for (let i = -3; i <= 3; i++) {
-                let val = mean + i * sd;
-                if (val >= xMin && val <= xMax) {
-                    let px = scaleX(val);
-                    ctx.beginPath();
-                    ctx.moveTo(px, height - padding);
-                    ctx.lineTo(px, height - padding + 6);
-                    ctx.stroke();
-                    ctx.fillText(val.toFixed(1), px, height - padding + 22);
-                }
-            }
-
-            let prob = 0;
-            let zText = "";
-            if (mode === 'less') {
-                prob = normalCDF(a, mean, sd);
-                let z = (a - mean) / sd;
-                zText = `Z-score for a = ${a}: ${z.toFixed(2)}`;
-            } else if (mode === 'greater') {
-                prob = 1 - normalCDF(a, mean, sd);
-                let z = (a - mean) / sd;
-                zText = `Z-score for a = ${a}: ${z.toFixed(2)}`;
-            } else if (mode === 'between') {
-                prob = normalCDF(b, mean, sd) - normalCDF(a, mean, sd);
-                let za = (a - mean) / sd;
-                let zb = (b - mean) / sd;
-                zText = `Z-scores: a = ${a} (z = ${za.toFixed(2)}), b = ${b} (z = ${zb.toFixed(2)})`;
-            }
-
-            resultText.textContent = `Probability: P = ${prob.toFixed(4)} (${(prob * 100).toFixed(2)}%)`;
-            zScoreText.textContent = zText;
-        }
-
-        meanRange.addEventListener('input', () => {
-            meanInput.value = meanRange.value;
-            drawChart();
-        });
-
-        meanInput.addEventListener('input', () => {
-            if (!isNaN(meanInput.value)) {
-                meanRange.value = meanInput.value;
-            }
-            drawChart();
-        });
-
-        sdRange.addEventListener('input', () => {
-            sdInput.value = sdRange.value;
-            drawChart();
-        });
-
-        sdInput.addEventListener('input', () => {
-            if (!isNaN(sdInput.value) && parseFloat(sdInput.value) > 0) {
-                sdRange.value = sdInput.value;
-            }
-            drawChart();
-        });
-
-        calcMode.addEventListener('change', () => {
-            if (calcMode.value === 'between') {
-                groupValB.style.display = 'flex';
-            } else {
-                groupValB.style.display = 'none';
-            }
-            drawChart();
-        });
-
-        valAInput.addEventListener('input', drawChart);
-        valBInput.addEventListener('input', drawChart);
-
-        drawChart();
-    </script>
-</body>
-</html>
+            let a =
